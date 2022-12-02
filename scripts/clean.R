@@ -6,13 +6,19 @@ library(doParallel)
 args = commandArgs(trailingOnly=TRUE)
 
 
-
+genomesdir="genomes/"
+outputdir="results/"
 threads=args[1]
+genomesdir=args[2]
+outputdir=args[3]
+if(!dir.exists(genomesdir)) dir.create(genomesdir)
+if(!dir.exists(outputdir)) dir.create(outputdir)
+
 cl <- makeCluster(as.numeric(threads))
 print(cl)
 registerDoParallel(cl)
 
-system("rm genomes/*;ls ../Metaphage_outputs_whole/cd-hit/vOTUs_consensus/* | while read f; do cp $f genomes/; done")
+#system(paste0("rm ",genomesdir,"*; ls ../Metaphage_outputs_whole/cd-hit/vOTUs_consensus/* | while read f; do cp $f ",genomesdir,"/; done"))
 
 
 # file_filtd=read.table("../iglike_git/iglike2022/results/count_meta_filtd.tsv",sep="\t",header=T)
@@ -28,7 +34,7 @@ system("rm genomes/*;ls ../Metaphage_outputs_whole/cd-hit/vOTUs_consensus/* | wh
 #   }
 # }
 
-fils<-list.files("genomes/")
+fils<-list.files(genomesdir)
 system('mv collected_ANI collected_ANI.legacy')
 
 anidf <- data.frame(matrix(ncol = 3, nrow = 0))
@@ -49,14 +55,14 @@ anidf = foreach(i=1:length(fils), .combine=rbind) %dopar% {
     print(fils[o])
     #system(paste0("~/fastANI -q genomes/",fils[i]," -r ../genomes/",fils[o]," -o tmp"))
     system(paste0("rm results/tmptbl",i),ignore.stderr = TRUE)
-    system(paste0('blastn  -subject genomes/',fils[o],' -query genomes/'
-                  ,fils[i],'    -out results/tmptbl',i,' -max_target_seqs 1    -outfmt "6 qseqid sseqid qstart qend sstart send qseq sseq evalue bitscore pident qlen slen" ')
+    system(paste0('blastn  -subject ',genomesdir,fils[o],' -query ',genomesdir
+                  ,fils[i],'    -out ',outputdir,'tmptbl',i,' -max_target_seqs 1    -outfmt "6 qseqid sseqid qstart qend sstart send qseq sseq evalue bitscore pident qlen slen" ')
            ,ignore.stderr = TRUE)
     #system(paste0("sed -i '1s/^/",fils[i],"\t",fils[o],"\t","/' tmp"))
     
-    if(file.info(paste0("results/tmptbl",i))$size!=0){
+    if(file.info(paste0(outputdir,"tmptbl",i))$size!=0){
       
-      tmptbl<-read.table(paste0("results/tmptbl",i),sep="\t",header=F)
+      tmptbl<-read.table(paste0(outputdir,"tmptbl",i),sep="\t",header=F)
       names(tmptbl)<-c("qseqid" ,"sseqid" ,"qstart", "qend", "sstart", "send","qseq","sseq", "evalue", "bitscore" ,"pident" ,"qlen", "slen")
       
       if(tmptbl$qlen[1]>tmptbl$slen[1]){
@@ -141,5 +147,5 @@ anidf = foreach(i=1:length(fils), .combine=rbind) %dopar% {
   totaldf
 }
 
-write.table(anidf,file="results/tempres.tsv",quote=F,row.names=F,sep=",")
+write.table(anidf,file=paste0(outputdir,"tempres.tsv",quote=F,row.names=F,sep=",")
 slackr::slackr_bot("Finished with ANIs")
