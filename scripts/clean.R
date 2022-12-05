@@ -14,6 +14,11 @@ outputdir=args[3]
 if(!dir.exists(genomesdir)) dir.create(genomesdir)
 if(!dir.exists(outputdir)) dir.create(outputdir)
 
+
+print(threads)
+print(genomesdir)
+print(outputdir)
+
 cl <- makeCluster(as.numeric(threads))
 print(cl)
 registerDoParallel(cl)
@@ -34,7 +39,7 @@ registerDoParallel(cl)
 #   }
 # }
 
-fils<-list.files(genomesdir)
+fils<-list.files(genomesdir,pattern = "gb")
 system('mv collected_ANI collected_ANI.legacy')
 
 anidf <- data.frame(matrix(ncol = 3, nrow = 0))
@@ -54,14 +59,14 @@ anidf = foreach(i=1:length(fils), .combine=rbind) %dopar% {
   for(o in i:length(fils)){
     print(fils[o])
     #system(paste0("~/fastANI -q genomes/",fils[i]," -r ../genomes/",fils[o]," -o tmp"))
-    system(paste0("rm results/tmptbl",i),ignore.stderr = TRUE)
+    system(paste0("rm ",outputdir,"tmptbl",i),ignore.stderr = TRUE)
     system(paste0('blastn  -subject ',genomesdir,fils[o],' -query ',genomesdir
                   ,fils[i],'    -out ',outputdir,'tmptbl',i,' -max_target_seqs 1    -outfmt "6 qseqid sseqid qstart qend sstart send qseq sseq evalue bitscore pident qlen slen" ')
            ,ignore.stderr = TRUE)
     #system(paste0("sed -i '1s/^/",fils[i],"\t",fils[o],"\t","/' tmp"))
     
-    if(file.info(paste0(outputdir,"tmptbl",i))$size!=0){
-      
+    if(file.exists(paste0(outputdir,"tmptbl",i))){
+      if(file.info(paste0(outputdir,"tmptbl",i))$size==0) next
       tmptbl<-read.table(paste0(outputdir,"tmptbl",i),sep="\t",header=F)
       names(tmptbl)<-c("qseqid" ,"sseqid" ,"qstart", "qend", "sstart", "send","qseq","sseq", "evalue", "bitscore" ,"pident" ,"qlen", "slen")
       
@@ -141,11 +146,12 @@ anidf = foreach(i=1:length(fils), .combine=rbind) %dopar% {
       totaldf<-rbind(totaldf,tmpdf)
       
       
+      
     }
   
   }
   totaldf
 }
 
-write.table(anidf,file=paste0(outputdir,"tempres.tsv",quote=F,row.names=F,sep=",")
+write.table(anidf,file=paste0(outputdir,"tempres.tsv"),quote=F,row.names=F,sep=",")
 slackr::slackr_bot("Finished with ANIs")
