@@ -39,7 +39,7 @@ registerDoParallel(cl)
 #   }
 # }
 
-fils<-list.files(genomesdir,pattern = "gb")
+fils<-list.files(genomesdir,pattern = "fasta")
 system('mv collected_ANI collected_ANI.legacy')
 
 anidf <- data.frame(matrix(ncol = 3, nrow = 0))
@@ -53,11 +53,15 @@ anidf = foreach(i=1:length(fils), .combine=rbind) %dopar% {
   x <- c("seq1", "seq2", "ANI")
   colnames(anidf) <- x
   print(fils[i])
+  if(file.info(paste0(genomesdir,fils[i]))$size>1000000) next
+  
   count=count+1
   print(count)
   #if(count==2) break()
   for(o in i:length(fils)){
     print(fils[o])
+    if(file.info(paste0(genomesdir,fils[o]))$size>1000000) next
+    
     #system(paste0("~/fastANI -q genomes/",fils[i]," -r ../genomes/",fils[o]," -o tmp"))
     system(paste0("rm ",outputdir,"tmptbl",i),ignore.stderr = TRUE)
     system(paste0('blastn  -subject ',genomesdir,fils[o],' -query ',genomesdir
@@ -67,6 +71,7 @@ anidf = foreach(i=1:length(fils), .combine=rbind) %dopar% {
     
     if(file.exists(paste0(outputdir,"tmptbl",i))){
       if(file.info(paste0(outputdir,"tmptbl",i))$size==0) next
+      
       tmptbl<-read.table(paste0(outputdir,"tmptbl",i),sep="\t",header=F)
       names(tmptbl)<-c("qseqid" ,"sseqid" ,"qstart", "qend", "sstart", "send","qseq","sseq", "evalue", "bitscore" ,"pident" ,"qlen", "slen")
       
