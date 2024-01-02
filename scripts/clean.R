@@ -25,24 +25,8 @@ cl <- makeCluster(as.numeric(threads))
 print(cl)
 registerDoParallel(cl)
 
-#system(paste0("rm ",genomesdir,"*; ls ../Metaphage_outputs_whole/cd-hit/vOTUs_consensus/* | while read f; do cp $f ",genomesdir,"/; done"))
-
-
-# file_filtd=read.table("../iglike_git/iglike2022/results/count_meta_filtd.tsv",sep="\t",header=T)
-# fils<-list.files("genomes/")
-# fils
-# file_filtd$ViralOTU<-paste0(file_filtd$ViralOTU,".fasta")
-# file_filtd$ViralOTU
-# for(i in fils){
-#   if(i %in% file_filtd$ViralOTU){
-#     print(i)
-#   }else{
-#     system(paste0("rm genomes/",i))
-#   }
-# }
 
 fils<-list.files(genomesdir,pattern = "fasta")
-#system('mv collected_ANI collected_ANI.legacy')
 
 anidf <- data.frame(matrix(ncol = 3, nrow = 0))
 x <- c("seq1", "seq2", "ANI")
@@ -55,8 +39,7 @@ anidf = foreach(i=1:length(fils), .combine=rbind) %dopar% {
   x <- c("seq1", "seq2", "ANI")
   colnames(anidf) <- x
   print(fils[i])
-  if(file.info(paste0(genomesdir,fils[i]))$size>1000000) next
-  
+
   count=count+1
   print(count)
   #if(count==2) break()
@@ -162,7 +145,6 @@ anidf = foreach(i=1:length(fils), .combine=rbind) %dopar% {
 
 
 write.table(anidf,file=paste0(outputdir,"tempres.tsv"),quote=F,row.names=F,sep=",")
-slackr::slackr_bot("Finished with ANIs")
 
 anim<-matrix(nrow=length(unique(anidf$qseqid)),ncol=length(unique(anidf$sseqid)))
 
@@ -176,7 +158,7 @@ for(i in seq_along(anidf$qseqid)){
   
 }
 
-
+#Personal cases
 row.names(anim)<-gsub("vB_Aba._","",gsub(".fasta","",row.names(anim))) 
 colnames(anim)<-gsub("vB_Aba._","",gsub(".fasta","",colnames(anim))) 
 
@@ -242,34 +224,7 @@ pheatmap::pheatmap(anim,
                    color = colorRampPalette(
                      RColorBrewer::brewer.pal(n = 7, name = "Purples"))(100))
 dev.off()
-row.names(anim)
-row_colors=c("black","darkgreen","black","darkgreen","black",
-             "black","darkgreen","black","black","black",
-             "black","black","black","black","black",
-             "purple","black","purple","black","black")
-row_colors=c("black","black","black","black","black",
-             "black","black","black","black","black",
-             "black","black","black","black","black",
-             "black","black","black","black","black")
-row_colors
 
-pdf(paste0(outputdir,"Complex30.pdf"), height =125, width = 125)
-ht=Heatmap(anim, col=colorRampPalette(
-  RColorBrewer::brewer.pal(n = 7, name = "Reds"))(100),
-  row_names_gp = gpar(col = row_colors,fontsize=90),
-        column_names_gp = gpar(col = row_colors,fontsize=90),
-        show_row_dend=F,
-        show_column_dend=F,
-        show_heatmap_legend=F
-        )
-
-library(circlize)
-col_fun = colorRamp2(c(0, 100), c("white", "red"))
-lgd = Legend(col_fun = col_fun, title = "ANI",grid_height = unit(10, "npc"),grid_width = unit(2, "npc"),labels_gp = gpar(col = "black", fontsize = 85),title_gp = gpar(col = "black", fontsize = 60))
-draw(ht, padding = unit(c(50, 50, 50, 50), "cm")) ## see right heatmap in following
-draw(lgd, x = unit(375, "cm"), y = unit(235, "cm"), just = c("right", "top"))
-
-dev.off()
 
 pdf(paste0(outputdir,"tempheat60.pdf"), height =90, width = 90)
 e=pheatmap::pheatmap(anim,
@@ -286,23 +241,7 @@ e=pheatmap::pheatmap(anim,
                    fontsize =4,
                    color = colorRampPalette(
                      RColorBrewer::brewer.pal(n = 7, name = "PuRd"))(10))
-# data=anim
-# data$name=row.names(data)
-# data$color="black"
-for(i in 1:length(data$name)){
-  if(grepl("Navy4|AbTP3",data$name[i])&!grepl("Hun",data$name[i])) data$color[i]<-"green"
-  if(grepl("Maestro|WCHABP1",data$name[i])&!grepl("Hun",data$name[i])) data$color[i]<-"purple"
-  
-}
-# e$gtable$grobs[[1]]
-# e$gtable$grobs[[2]]
-# e$gtable$grobs[[3]]
-# e$gtable$grobs[[4]]
-# cols=data[order(match(rownames(data), e$gtable$grobs[[3]]$label)), ]$color
-# cols
-# stop()
-# e$gtable$grobs[[3]]$gp=gpar(col=cols)
-e
+
 
 dev.off()
 
