@@ -1,8 +1,10 @@
 #system("rm genomes/*;cp ../Metaphage_outputs_whole/cd-hit/vOTUs_consensus/* genomes/")
 #TODO: do blastp mode :)
-
+library(tidyverse)
 library(foreach)
 library(doParallel)
+library(grid)
+
 args = commandArgs(trailingOnly=TRUE)
 
 
@@ -40,7 +42,7 @@ registerDoParallel(cl)
 # }
 
 fils<-list.files(genomesdir,pattern = "fasta")
-system('mv collected_ANI collected_ANI.legacy')
+#system('mv collected_ANI collected_ANI.legacy')
 
 anidf <- data.frame(matrix(ncol = 3, nrow = 0))
 x <- c("seq1", "seq2", "ANI")
@@ -158,5 +160,166 @@ anidf = foreach(i=1:length(fils), .combine=rbind) %dopar% {
   totaldf
 }
 
+
 write.table(anidf,file=paste0(outputdir,"tempres.tsv"),quote=F,row.names=F,sep=",")
 slackr::slackr_bot("Finished with ANIs")
+
+anim<-matrix(nrow=length(unique(anidf$qseqid)),ncol=length(unique(anidf$sseqid)))
+
+row.names(anim)=unique(anidf$qseqid)
+colnames(anim)=unique(anidf$qseqid)
+
+for(i in seq_along(anidf$qseqid)){
+  anim[anidf$qseqid[i],anidf$sseqid[i]]<-anidf$ANI[i]
+  anim[anidf$sseqid[i],anidf$qseqid[i]]<-anidf$ANI[i]
+  
+  
+}
+
+
+row.names(anim)<-gsub("vB_Aba._","",gsub(".fasta","",row.names(anim))) 
+colnames(anim)<-gsub("vB_Aba._","",gsub(".fasta","",colnames(anim))) 
+
+row.names(anim)<-gsub("\\_Hun","",row.names(anim)) 
+colnames(anim)<-gsub("\\_Hun","",row.names(anim)) 
+
+row.names(anim)<-gsub("\\_"," ",row.names(anim)) 
+colnames(anim)<-gsub("\\_"," ",row.names(anim)) 
+
+
+row.names(anim)<-gsub("phiAbaA1 Rocket","Rocket",row.names(anim)) 
+colnames(anim)<-gsub("phiAbaA1 Rocket","Rocket",row.names(anim)) 
+
+row.names(anim)<-gsub("Nayy","Navy",row.names(anim)) 
+colnames(anim)<-gsub("Navy","Navy",row.names(anim)) 
+
+row.names(anim)<-gsub("Storma","Storm",row.names(anim)) 
+colnames(anim)<-gsub("Storma","Storm",row.names(anim)) 
+
+
+p<-heatmaply::heatmaply(anim,
+                        
+                        show_dendrogram=FALSE,
+                        column_text_angle=70,
+                        fontsize_row=18,
+                        fontsize_col=18,
+                        Rowv=F,
+                        Colv=F,
+                        grid_gap=5,
+                        hide_colorbar=F,
+                        colorbar_thickness = 30,
+                        colorbar_len= 5,
+                        side_colorbar_len = 5,
+                        grid_color="white",
+                        color = c("white","red")
+) 
+
+
+
+
+p$width <- 1400
+p$height <- 1400
+
+htmlwidgets::saveWidget(p,paste0(outputdir,"tempmatrix.html"),
+                        selfcontained = TRUE, libdir = NULL)
+
+anim[is.na(anim)] <- 0
+library(ComplexHeatmap)
+
+pdf(paste0(outputdir,"tempheat30.pdf"), height =55, width = 55)
+pheatmap::pheatmap(anim,
+                   treeheight_row=0,
+                   treeheight_col=0,
+                   cellwidth = 20, 
+                   cellheight = 20,
+                   cluster_row = T,
+                   cluster_col = T,
+                   show_rownames = T,
+                   show_colnames = T,
+                   cex = 2.5,
+                   legend = T,
+                   fontsize =2,
+                   color = colorRampPalette(
+                     RColorBrewer::brewer.pal(n = 7, name = "Purples"))(100))
+dev.off()
+row.names(anim)
+row_colors=c("black","darkgreen","black","darkgreen","black",
+             "black","darkgreen","black","black","black",
+             "black","black","black","black","black",
+             "purple","black","purple","black","black")
+row_colors=c("black","black","black","black","black",
+             "black","black","black","black","black",
+             "black","black","black","black","black",
+             "black","black","black","black","black")
+row_colors
+
+pdf(paste0(outputdir,"Complex30.pdf"), height =125, width = 125)
+ht=Heatmap(anim, col=colorRampPalette(
+  RColorBrewer::brewer.pal(n = 7, name = "Reds"))(100),
+  row_names_gp = gpar(col = row_colors,fontsize=90),
+        column_names_gp = gpar(col = row_colors,fontsize=90),
+        show_row_dend=F,
+        show_column_dend=F,
+        show_heatmap_legend=F
+        )
+
+library(circlize)
+col_fun = colorRamp2(c(0, 100), c("white", "red"))
+lgd = Legend(col_fun = col_fun, title = "ANI",grid_height = unit(10, "npc"),grid_width = unit(2, "npc"),labels_gp = gpar(col = "black", fontsize = 85),title_gp = gpar(col = "black", fontsize = 60))
+draw(ht, padding = unit(c(50, 50, 50, 50), "cm")) ## see right heatmap in following
+draw(lgd, x = unit(375, "cm"), y = unit(235, "cm"), just = c("right", "top"))
+
+dev.off()
+
+pdf(paste0(outputdir,"tempheat60.pdf"), height =90, width = 90)
+e=pheatmap::pheatmap(anim,
+                   treeheight_row=0,
+                   treeheight_col=0,
+                   cellwidth = 30, 
+                   cellheight = 30,
+                   cluster_row = T,
+                   cluster_col = T,
+                   show_rownames = T,
+                   show_colnames = T,
+                   cex = 2.5,
+                   legend = T,
+                   fontsize =4,
+                   color = colorRampPalette(
+                     RColorBrewer::brewer.pal(n = 7, name = "PuRd"))(10))
+# data=anim
+# data$name=row.names(data)
+# data$color="black"
+for(i in 1:length(data$name)){
+  if(grepl("Navy4|AbTP3",data$name[i])&!grepl("Hun",data$name[i])) data$color[i]<-"green"
+  if(grepl("Maestro|WCHABP1",data$name[i])&!grepl("Hun",data$name[i])) data$color[i]<-"purple"
+  
+}
+# e$gtable$grobs[[1]]
+# e$gtable$grobs[[2]]
+# e$gtable$grobs[[3]]
+# e$gtable$grobs[[4]]
+# cols=data[order(match(rownames(data), e$gtable$grobs[[3]]$label)), ]$color
+# cols
+# stop()
+# e$gtable$grobs[[3]]$gp=gpar(col=cols)
+e
+
+dev.off()
+
+pdf(paste0(outputdir,"tempheat60.pdf"), height =90, width = 90)
+pheatmap::pheatmap(anim,
+                   treeheight_row=0,
+                   treeheight_col=0,
+                   cellwidth = 20, 
+                   cellheight = 20,
+                   cluster_row = T,
+                   cluster_col = T,
+                   show_rownames = T,
+                   show_colnames = T,
+                   cex = 2.5,
+                   legend = T,
+                   fontsize =5,
+                   color = colorRampPalette(
+                     RColorBrewer::brewer.pal(n = 7, name = "Reds"))(100))
+dev.off()
+
