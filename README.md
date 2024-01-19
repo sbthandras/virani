@@ -9,26 +9,19 @@ overlapping section, but keeps the worse on sections when it is the only alignme
 ### Dependencies  
 
 - ncbi-blast
-- R, specifically with these libraries
+- R, specifically with these libraries:
   - tidyverse
   - foreach
   - doParallel
   - grid
+  - dplyr
 
-### Installation
+### Running
 
-_Below is an example of how you can instruct your audience on installing and setting up your app. This template doesn't rely on any external dependencies or services._
-
-1. Get a free API Key at [https://example.com](https://example.com)
-2. Clone the repo
+1. Clone the repo
    ```sh
-   git clone https://github.com/your_username_/Project-Name.git
+   git clone https://github.com/sbthandras/virani
    ```
-3. Install NPM packages
-   ```sh
-   npm install
-   ```
-4. Enter your API in `config.js`
-   ```js
-   const API_KEY = 'ENTER YOUR API';
-   ```
+2. create the **genomesdir** and **results*
+3. In the **genomesdir** create an **input_folder** to place your genomes in .fna nucleotide format
+4. Rscript scripts/clean.R **threads** **genomesdir/input_folder** **results/output_folder**
