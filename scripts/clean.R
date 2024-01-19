@@ -179,34 +179,12 @@ row.names(anim)<-gsub("Storma","Storm",row.names(anim))
 colnames(anim)<-gsub("Storma","Storm",row.names(anim)) 
 
 
-p<-heatmaply::heatmaply(anim,
-                        
-                        show_dendrogram=FALSE,
-                        column_text_angle=70,
-                        fontsize_row=18,
-                        fontsize_col=18,
-                        Rowv=F,
-                        Colv=F,
-                        grid_gap=5,
-                        hide_colorbar=F,
-                        colorbar_thickness = 30,
-                        colorbar_len= 5,
-                        side_colorbar_len = 5,
-                        grid_color="white",
-                        color = c("white","red")
-) 
-
-
-
-
 p$width <- 1400
 p$height <- 1400
 
-htmlwidgets::saveWidget(p,paste0(outputdir,"tempmatrix.html"),
-                        selfcontained = TRUE, libdir = NULL)
+
 
 anim[is.na(anim)] <- 0
-library(ComplexHeatmap)
 
 pdf(paste0(outputdir,"tempheat30.pdf"), height =55, width = 55)
 pheatmap::pheatmap(anim,
