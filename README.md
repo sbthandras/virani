@@ -24,4 +24,7 @@ overlapping section, but keeps the worse on sections when it is the only alignme
    ```
 2. create the **genomesdir** and **results*
 3. In the **genomesdir** create an **input_folder** to place your genomes in .fna nucleotide format
-4. Rscript scripts/clean.R **threads** **genomesdir/input_folder** **results/output_folder**
+4.
+  ```sh
+  Rscript scripts/clean.R **threads** **genomesdir/input_folder** **results/output_folder**
+  ```
