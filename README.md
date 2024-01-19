@@ -28,3 +28,4 @@ overlapping section, but keeps the worse on sections when it is the only alignme
   ```sh
   Rscript scripts/clean.R <threads>> genomesdir/<input_folder> results/<output_folder>
   ```
+5. The output will be in results/<output_folder>
