@@ -26,7 +26,7 @@ registerDoParallel(cl)
 
 
 fils<-list.files(genomesdir,pattern = "fasta")
-
+print(fils)
 anidf <- data.frame(matrix(ncol = 3, nrow = 0))
 x <- c("seq1", "seq2", "ANI")
 colnames(anidf) <- x
@@ -46,15 +46,15 @@ anidf = foreach(i=1:length(fils), .combine=rbind) %dopar% {
     if(file.info(paste0(genomesdir,fils[o]))$size>1000000) next
     
     system(paste0("rm ",outputdir,"tmptbl",i),ignore.stderr = TRUE)
-    system(paste0('blastn  -subject ',genomesdir,fils[o],' -query ',genomesdir
-                  ,fils[i],'    -out ',outputdir,'tmptbl',i,' -max_target_seqs 1    -outfmt "6 qseqid sseqid qstart qend sstart send qseq sseq evalue bitscore pident qlen slen" ')
+    system(paste0('blastn  -subject ',genomesdir,fils[o],' -query ',genomesdir,fils[i],'    -out ',outputdir,'tmptbl',i,' -max_target_seqs 1    -outfmt "6 qseqid sseqid qstart qend sstart send qseq sseq evalue bitscore pident qlen slen" ')
            ,ignore.stderr = TRUE)
     
     if(file.exists(paste0(outputdir,"tmptbl",i))){
       if(file.info(paste0(outputdir,"tmptbl",i))$size==0) next
       
       tmptbl<-read.table(paste0(outputdir,"tmptbl",i),sep="\t",header=F)
-      names(tmptbl)<-c("qseqid" ,"sseqid" ,"qstart", "qend", "sstart", "send","qseq","sseq", "evalue", "bitscore" ,"pident" ,"qlen", "slen")
+      names(tmptbl)<-c("qseqid" ,"sseqid" ,"qstart", "qend", "sstart", 
+"send","qseq","sseq", "evalue", "bitscore" ,"pident" ,"qlen", "slen")
       
       if(tmptbl$qlen[1]>tmptbl$slen[1]){
         tmptbl$alignlen<-0
@@ -64,25 +64,33 @@ anidf = foreach(i=1:length(fils), .combine=rbind) %dopar% {
         }
         
         tmptbl$biggerlen<-tmptbl$qlen
-        tmptbl$weightedpid<-tmptbl$pident*abs(tmptbl$alignlen/tmptbl$biggerlen)
+        
+tmptbl$weightedpid<-tmptbl$pident*abs(tmptbl$alignlen/tmptbl$biggerlen)
         
         for(ii in seq_along(tmptbl$qstart)){
           
           for(xx in ii:length(tmptbl$qstart)){
-            print(length(intersect(tmptbl$sstart[ii]:tmptbl$send[ii],tmptbl$qstart[xx]:tmptbl$qend[xx])))
+            
+print(length(intersect(tmptbl$sstart[ii]:tmptbl$send[ii],tmptbl$qstart[xx]:tmptbl$qend[xx])))
             print("alignlen")
             print(tmptbl$qlen[ii])
             print(tmptbl$qlen[xx])
             
-            if(length(intersect(tmptbl$qstart[ii]:tmptbl$qend[ii],tmptbl$qstart[xx]:tmptbl$qend[xx]))>=1){
-              if(tmptbl$weightedpid[ii]>tmptbl$weightedpid[xx]) tmptbl$weightedpid[xx]<-tmptbl$weightedpid[xx]*
+            
+if(length(intersect(tmptbl$qstart[ii]:tmptbl$qend[ii],tmptbl$qstart[xx]:tmptbl$qend[xx]))>=1){
+              if(tmptbl$weightedpid[ii]>tmptbl$weightedpid[xx]) 
+tmptbl$weightedpid[xx]<-tmptbl$weightedpid[xx]*
                   (
-                    (length(tmptbl$qstart[xx]:tmptbl$qend[xx])-length(intersect(
-                      tmptbl$qstart[ii]:tmptbl$qend[ii],tmptbl$qstart[xx]:tmptbl$qend[xx]))
+                    
+(length(tmptbl$qstart[xx]:tmptbl$qend[xx])-length(intersect(
+                      
+tmptbl$qstart[ii]:tmptbl$qend[ii],tmptbl$qstart[xx]:tmptbl$qend[xx]))
                     )/
                       length(tmptbl$qstart[xx]:tmptbl$qend[xx]))
-              if(tmptbl$weightedpid[ii]<tmptbl$weightedpid[xx]) tmptbl$weightedpid[ii]<-tmptbl$weightedpid[ii]*
-                  ((length(tmptbl$qstart[ii]:tmptbl$qend[ii])-length(intersect(tmptbl$qstart[ii]:tmptbl$qend[ii],tmptbl$qstart[xx]:tmptbl$qend[xx])))/
+              if(tmptbl$weightedpid[ii]<tmptbl$weightedpid[xx]) 
+tmptbl$weightedpid[ii]<-tmptbl$weightedpid[ii]*
+                  
+((length(tmptbl$qstart[ii]:tmptbl$qend[ii])-length(intersect(tmptbl$qstart[ii]:tmptbl$qend[ii],tmptbl$qstart[xx]:tmptbl$qend[xx])))/
                      length(tmptbl$qstart[ii]:tmptbl$qend[ii]))
             }
             
@@ -96,21 +104,28 @@ anidf = foreach(i=1:length(fils), .combine=rbind) %dopar% {
           
         }
         tmptbl$biggerlen<-tmptbl$slen
-        tmptbl$weightedpid<-tmptbl$pident*abs(tmptbl$alignlen/tmptbl$biggerlen)
+        
+tmptbl$weightedpid<-tmptbl$pident*abs(tmptbl$alignlen/tmptbl$biggerlen)
         for(ii in seq_along(tmptbl$sstart)){
           for(xx in ii:length(tmptbl$sstart)){
-            print(length(intersect(tmptbl$sstart[ii]:tmptbl$send[ii],tmptbl$sstart[xx]:tmptbl$send[xx])))
+            
+print(length(intersect(tmptbl$sstart[ii]:tmptbl$send[ii],tmptbl$sstart[xx]:tmptbl$send[xx])))
             print("alignlen")
             print(tmptbl$slen[ii])
             print(tmptbl$slen[xx])
             
-            if(length(intersect(tmptbl$sstart[ii]:tmptbl$send[ii],tmptbl$sstart[xx]:tmptbl$send[xx]))>=1){
-              if(tmptbl$weightedpid[ii]>tmptbl$weightedpid[xx]) tmptbl$weightedpid[xx]<-tmptbl$weightedpid[xx]*(
-                (length(tmptbl$sstart[xx]:tmptbl$send[xx])-length(intersect(tmptbl$sstart[ii]:tmptbl$send[ii],tmptbl$sstart[xx]:tmptbl$send[xx])))/
+            
+if(length(intersect(tmptbl$sstart[ii]:tmptbl$send[ii],tmptbl$sstart[xx]:tmptbl$send[xx]))>=1){
+              if(tmptbl$weightedpid[ii]>tmptbl$weightedpid[xx]) 
+tmptbl$weightedpid[xx]<-tmptbl$weightedpid[xx]*(
+                
+(length(tmptbl$sstart[xx]:tmptbl$send[xx])-length(intersect(tmptbl$sstart[ii]:tmptbl$send[ii],tmptbl$sstart[xx]:tmptbl$send[xx])))/
                   length(tmptbl$sstart[xx]:tmptbl$send[xx])
               )
-              if(tmptbl$weightedpid[ii]<tmptbl$weightedpid[xx]) tmptbl$weightedpid[ii]<-tmptbl$weightedpid[ii]*(
-                (length(tmptbl$sstart[ii]:tmptbl$send[ii])-length(intersect(tmptbl$sstart[ii]:tmptbl$send[ii],tmptbl$sstart[xx]:tmptbl$send[xx])))/
+              if(tmptbl$weightedpid[ii]<tmptbl$weightedpid[xx]) 
+tmptbl$weightedpid[ii]<-tmptbl$weightedpid[ii]*(
+                
+(length(tmptbl$sstart[ii]:tmptbl$send[ii])-length(intersect(tmptbl$sstart[ii]:tmptbl$send[ii],tmptbl$sstart[xx]:tmptbl$send[xx])))/
                   length(tmptbl$sstart[ii]:tmptbl$send[ii])
               )
             }
@@ -173,8 +188,11 @@ row.names(anim)<-gsub("Storma","Storm",row.names(anim))
 colnames(anim)<-gsub("Storma","Storm",row.names(anim)) 
 
 
+<<<<<<< HEAD
 p$width <- 1400
 p$height <- 1400
+=======
+>>>>>>> 210083d (Changes regarding newlines in systemcalls)
 
 
 
@@ -194,7 +212,8 @@ pheatmap::pheatmap(anim,
                    legend = T,
                    fontsize =2,
                    color = colorRampPalette(
-                     RColorBrewer::brewer.pal(n = 7, name = "Purples"))(100))
+                     RColorBrewer::brewer.pal(n = 7, name = 
+"Purples"))(100))
 dev.off()
 
 
