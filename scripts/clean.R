@@ -32,7 +32,6 @@ x <- c("seq1", "seq2", "ANI")
 colnames(anidf) <- x
 count=0
 
-### csak egyet csinaljon meg 
 anidf = foreach(i=1:length(fils), .combine=rbind) %dopar% {
   totaldf <- data.frame(matrix(ncol = 3, nrow = 0))
   x <- c("seq1", "seq2", "ANI")
@@ -46,12 +45,10 @@ anidf = foreach(i=1:length(fils), .combine=rbind) %dopar% {
     print(fils[o])
     if(file.info(paste0(genomesdir,fils[o]))$size>1000000) next
     
-    #system(paste0("~/fastANI -q genomes/",fils[i]," -r ../genomes/",fils[o]," -o tmp"))
     system(paste0("rm ",outputdir,"tmptbl",i),ignore.stderr = TRUE)
     system(paste0('blastn  -subject ',genomesdir,fils[o],' -query ',genomesdir
                   ,fils[i],'    -out ',outputdir,'tmptbl',i,' -max_target_seqs 1    -outfmt "6 qseqid sseqid qstart qend sstart send qseq sseq evalue bitscore pident qlen slen" ')
            ,ignore.stderr = TRUE)
-    #system(paste0("sed -i '1s/^/",fils[i],"\t",fils[o],"\t","/' tmp"))
     
     if(file.exists(paste0(outputdir,"tmptbl",i))){
       if(file.info(paste0(outputdir,"tmptbl",i))$size==0) next
@@ -125,9 +122,7 @@ anidf = foreach(i=1:length(fils), .combine=rbind) %dopar% {
       
       
       
-      #print(paste0("slen is ",tmptbl$slen[1],"qlen is",tmptbl$qlen[1],"weightedpid is ",sum(tmptbl$weightedpid),"biggerlen is ",tmptbl$biggerlen[1]))  
-      #print(sum(tmptbl$weightedpid))
-      #print(coverage)
+
       tmpdf <- tmptbl[1,c("qseqid","sseqid")]
       tmpdf$ANI<-sum(tmptbl$weightedpid)
       tmpdf$qseqid<-fils[o]
