@@ -1,5 +1,4 @@
-#system("rm genomes/*;cp ../Metaphage_outputs_whole/cd-hit/vOTUs_consensus/* genomes/")
-#TODO: do blastp mode :)
+
 library(tidyverse)
 library(foreach)
 library(doParallel)
